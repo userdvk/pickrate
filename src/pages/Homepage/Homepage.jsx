@@ -220,7 +220,7 @@ export function Homepage() {
             onClick={startShiftHandler}
             disabled={startTime !== null}
           >
-            Start Shift
+            Start
           </Button>
           <Button type={"carrot"} onClick={pauseHandler} disabled={!startTime}>
             {pauseTime ? "Resume" : "Pause"}
@@ -230,7 +230,7 @@ export function Homepage() {
             onClick={finishShiftHandler}
             disabled={!startTime}
           >
-            Finish Shift
+            Finish
           </Button>
         </div>
 
