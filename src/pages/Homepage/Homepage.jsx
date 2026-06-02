@@ -34,6 +34,7 @@ export function Homepage() {
   const [totalCasesPerHour, setTotalCasesPerHour] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
   const [orderInput, setOrderInput] = useState("");
+  const [finalStats, setFinalStats] = useState(saved?.finalStats ?? null);
 
   const intervalRef = useRef(null);
   const startTimeRef = useRef(startTime);
@@ -56,8 +57,14 @@ export function Homepage() {
 
   useEffect(() => {
     if (!startTime) return;
-    saveToStorage({ startTime, totalCases, totalBreakMs, pauseTime });
-  }, [startTime, totalCases, totalBreakMs, pauseTime]);
+    saveToStorage({
+      startTime,
+      totalCases,
+      totalBreakMs,
+      pauseTime,
+      finalStats,
+    });
+  }, [startTime, totalCases, totalBreakMs, pauseTime, finalStats]);
 
   useEffect(() => {
     if (!startTime) return;
@@ -65,8 +72,6 @@ export function Homepage() {
     intervalRef.current = setInterval(() => {
       const start = startTimeRef.current;
       if (!start) return;
-
-      // Пауза — замораживаем пикрейт
       if (pauseTimeRef.current) return;
 
       const workingTimeMs = Date.now() - start - totalBreakMsRef.current;
@@ -85,6 +90,7 @@ export function Homepage() {
     const now = Date.now();
     setStartTime(now);
     startTimeRef.current = now;
+    setFinalStats(null);
   };
 
   const openPopup = () => {
@@ -112,21 +118,45 @@ export function Homepage() {
   };
 
   const finishShiftHandler = () => {
+    // Первое нажатие — показываем финальную статистику
+    if (startTime) {
+      const workingTimeMs = Date.now() - startTime - totalBreakMsRef.current;
+      const workingTimeHours = workingTimeMs / (1000 * 60 * 60);
+      const finalPickRate =
+        workingTimeHours > 0
+          ? Math.round(totalCasesRef.current / workingTimeHours)
+          : 0;
+
+      const stats = {
+        pickRate: finalPickRate,
+        totalCases: totalCasesRef.current,
+        startTime,
+        workingTimeMs,
+      };
+
+      setFinalStats(stats);
+      saveToStorage({ finalStats: stats });
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+
+      setStartTime(null);
+      startTimeRef.current = null;
+      setPauseTime(null);
+      pauseTimeRef.current = null;
+      return;
+    }
+
+    // Второе нажатие — полный сброс
     clearStorage();
-    setStartTime(null);
+    setFinalStats(null);
     setTotalCases(0);
     setTotalCasesPerHour(0);
-    setPauseTime(null);
     setTotalBreakMs(0);
-    setShowPopup(false);
     totalCasesRef.current = 0;
     totalBreakMsRef.current = 0;
-    startTimeRef.current = null;
-    pauseTimeRef.current = null;
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
   };
 
   const formatBreakTime = (ms) => {
@@ -135,6 +165,34 @@ export function Homepage() {
     const seconds = totalSeconds % 60;
     return `${minutes}м ${seconds}с`;
   };
+
+  const formatWorkingTime = (ms) => {
+    const totalMinutes = Math.floor(ms / 1000 / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return hours > 0 ? `${hours}ч ${minutes}м` : `${minutes}м`;
+  };
+
+  // Показываем финальный экран
+  if (finalStats) {
+    return (
+      <div className={cls.finalScreen}>
+        <h2 className={cls.finalTitle}>Shift complete</h2>
+        <div className={cls.finalPickrate}>{finalStats.pickRate}</div>
+        <strong className={cls.strong}>Final Pick Rate / hour</strong>
+        <div className={cls.finalInfo}>
+          <p>Total cases: {finalStats.totalCases}</p>
+          <p>Working time: {formatWorkingTime(finalStats.workingTimeMs)}</p>
+          <p>
+            Start time: {new Date(finalStats.startTime).toLocaleString("ru-RU")}
+          </p>
+        </div>
+        <Button type={"red"} onClick={finishShiftHandler}>
+          Clear & New Shift
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
