@@ -27,7 +27,9 @@ const clearStorage = () => {
 export function Homepage() {
   const saved = loadFromStorage();
 
-  const [startTime, setStartTime] = useState(saved?.startTime ?? null);
+  const [startTime, setStartTime] = useState(
+    saved?.finalStats ? null : (saved?.startTime ?? null),
+  );
   const [totalCases, setTotalCases] = useState(saved?.totalCases ?? 0);
   const [totalBreakMs, setTotalBreakMs] = useState(saved?.totalBreakMs ?? 0);
   const [pauseTime, setPauseTime] = useState(saved?.pauseTime ?? null);
@@ -118,7 +120,6 @@ export function Homepage() {
   };
 
   const finishShiftHandler = () => {
-    // Первое нажатие — показываем финальную статистику
     if (startTime) {
       const workingTimeMs = Date.now() - startTime - totalBreakMsRef.current;
       const workingTimeHours = workingTimeMs / (1000 * 60 * 60);
@@ -149,7 +150,6 @@ export function Homepage() {
       return;
     }
 
-    // Второе нажатие — полный сброс
     clearStorage();
     setFinalStats(null);
     setTotalCases(0);
@@ -173,7 +173,6 @@ export function Homepage() {
     return hours > 0 ? `${hours}ч ${minutes}м` : `${minutes}м`;
   };
 
-  // Показываем финальный экран
   if (finalStats) {
     return (
       <div className={cls.finalScreen}>
@@ -204,15 +203,13 @@ export function Homepage() {
       </div>
 
       <div>
-        <div className={cls.addorder}>
-          <Button
-            type={"blue"}
-            onClick={openPopup}
-            disabled={!startTime || !!pauseTime}
-          >
-            Add order
-          </Button>
-        </div>
+        {startTime && (
+          <div className={cls.addorder}>
+            <Button type={"blue"} onClick={openPopup} disabled={!!pauseTime}>
+              Add order
+            </Button>
+          </div>
+        )}
 
         <div className={cls.btnGroup}>
           <Button
