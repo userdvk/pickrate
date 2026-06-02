@@ -1,0 +1,16 @@
+.wrapper {
+  max-width: 600px;
+  min-height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.footer {
+  text-align: center;
+  margin: 10px;
+  display: flex;
+  justify-content: flex-end;
+  font-size: 14px;
+}

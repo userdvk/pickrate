@@ -1,0 +1,71 @@
+.pickrate {
+  text-align: center;
+  font-size: 80px;
+  padding-top: 20px;
+}
+.strong {
+  display: flex;
+  justify-content: space-around;
+}
+.btnGroup {
+  display: flex;
+  justify-content: space-evenly;
+  margin: 20px 0;
+}
+.info {
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+  margin-top: 40px;
+}
+.addorder {
+  display: flex;
+  justify-content: center;
+  margin: 60px 0;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.popup {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.popupTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.popupInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.popupInput:focus {
+  border-color: #4a90e2;
+}
+
+.popupButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

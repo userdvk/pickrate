@@ -1,0 +1,23 @@
+.btn {
+  width: 150px;
+  font-size: 25px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btnRed {
+  background-color: #c0392b;
+  color: #fff;
+}
+
+.btnGreen {
+  background-color: #27ae60;
+}
+.btnCarrot {
+  background-color: #e67e22;
+}
+
+.btnblue {
+  background-color: #2980b9;
+}
