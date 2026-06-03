@@ -109,7 +109,7 @@
   border: none;
   cursor: pointer;
   margin-left: 6px;
-  font-size: 14px;
+  font-size: 20px;
   opacity: 0.6;
   padding: 0;
 }
@@ -120,6 +120,7 @@
 
 .history {
   margin-top: 20px;
+  padding-left: 10px;
 }
 
 .historyTitle {
@@ -148,5 +149,5 @@
 .tableActions {
   display: flex;
   gap: 4px;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
