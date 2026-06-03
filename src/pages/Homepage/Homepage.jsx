@@ -37,6 +37,14 @@ export function Homepage() {
   const [showPopup, setShowPopup] = useState(false);
   const [orderInput, setOrderInput] = useState("");
   const [finalStats, setFinalStats] = useState(saved?.finalStats ?? null);
+  const [orderHistory, setOrderHistory] = useState(saved?.orderHistory ?? []);
+
+  const [editStartOpen, setEditStartOpen] = useState(false);
+  const [editBreakOpen, setEditBreakOpen] = useState(false);
+  const [editStartInput, setEditStartInput] = useState("");
+  const [editBreakInput, setEditBreakInput] = useState("");
+  const [editHistoryIndex, setEditHistoryIndex] = useState(null);
+  const [editHistoryInput, setEditHistoryInput] = useState("");
 
   const intervalRef = useRef(null);
   const startTimeRef = useRef(startTime);
@@ -65,8 +73,16 @@ export function Homepage() {
       totalBreakMs,
       pauseTime,
       finalStats,
+      orderHistory,
     });
-  }, [startTime, totalCases, totalBreakMs, pauseTime, finalStats]);
+  }, [
+    startTime,
+    totalCases,
+    totalBreakMs,
+    pauseTime,
+    finalStats,
+    orderHistory,
+  ]);
 
   useEffect(() => {
     if (!startTime) return;
@@ -93,6 +109,7 @@ export function Homepage() {
     setStartTime(now);
     startTimeRef.current = now;
     setFinalStats(null);
+    setOrderHistory([]);
   };
 
   const openPopup = () => {
@@ -104,6 +121,7 @@ export function Homepage() {
     const count = parseInt(orderInput, 10);
     if (!isNaN(count) && count > 0) {
       setTotalCases((prev) => prev + count);
+      setOrderHistory((prev) => [...prev, { time: Date.now(), count }]);
     }
     setShowPopup(false);
   };
@@ -155,8 +173,70 @@ export function Homepage() {
     setTotalCases(0);
     setTotalCasesPerHour(0);
     setTotalBreakMs(0);
+    setOrderHistory([]);
     totalCasesRef.current = 0;
     totalBreakMsRef.current = 0;
+  };
+
+  const openEditStart = () => {
+    if (!startTime) return;
+    const d = new Date(startTime);
+    const pad = (n) => String(n).padStart(2, "0");
+    setEditStartInput(
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    );
+    setEditStartOpen(true);
+  };
+
+  const confirmEditStart = () => {
+    const ts = new Date(editStartInput).getTime();
+    if (!isNaN(ts) && ts < Date.now()) {
+      setStartTime(ts);
+      startTimeRef.current = ts;
+    }
+    setEditStartOpen(false);
+  };
+
+  const openEditBreak = () => {
+    const totalMinutes = Math.floor(totalBreakMs / 1000 / 60);
+    setEditBreakInput(String(totalMinutes));
+    setEditBreakOpen(true);
+  };
+
+  const confirmEditBreak = () => {
+    const minutes = parseInt(editBreakInput, 10);
+    if (!isNaN(minutes) && minutes >= 0) {
+      const ms = minutes * 60 * 1000;
+      setTotalBreakMs(ms);
+      totalBreakMsRef.current = ms;
+    }
+    setEditBreakOpen(false);
+  };
+
+  const openEditHistory = (i) => {
+    setEditHistoryIndex(i);
+    setEditHistoryInput(String(orderHistory[i].count));
+  };
+
+  const confirmEditHistory = () => {
+    const count = parseInt(editHistoryInput, 10);
+    if (!isNaN(count) && count > 0) {
+      const oldCount = orderHistory[editHistoryIndex].count;
+      const diff = count - oldCount;
+      setOrderHistory((prev) =>
+        prev.map((entry, i) =>
+          i === editHistoryIndex ? { ...entry, count } : entry,
+        ),
+      );
+      setTotalCases((prev) => prev + diff);
+    }
+    setEditHistoryIndex(null);
+  };
+
+  const deleteHistoryEntry = (i) => {
+    const entry = orderHistory[i];
+    setTotalCases((prev) => prev - entry.count);
+    setOrderHistory((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const formatBreakTime = (ms) => {
@@ -203,44 +283,94 @@ export function Homepage() {
       </div>
 
       <div>
-        {startTime && (
+        {startTime && !pauseTime && (
           <div className={cls.addorder}>
-            <Button type={"blue"} onClick={openPopup} disabled={!!pauseTime}>
+            <Button type={"blue"} onClick={openPopup}>
               Add order
             </Button>
           </div>
         )}
 
         <div className={cls.btnGroup}>
-          <Button
-            type={"red"}
-            onClick={startShiftHandler}
-            disabled={startTime !== null}
-          >
-            Start
-          </Button>
-          <Button type={"carrot"} onClick={pauseHandler} disabled={!startTime}>
-            {pauseTime ? "Resume" : "Pause"}
-          </Button>
-          <Button
-            type={"green"}
-            onClick={finishShiftHandler}
-            disabled={!startTime}
-          >
-            Finish
-          </Button>
+          {!startTime && (
+            <Button type={"red"} onClick={startShiftHandler}>
+              Start
+            </Button>
+          )}
+          {startTime && !pauseTime && (
+            <>
+              <Button type={"carrot"} onClick={pauseHandler}>
+                Pause
+              </Button>
+              <Button type={"green"} onClick={finishShiftHandler}>
+                Finish
+              </Button>
+            </>
+          )}
+          {startTime && pauseTime && (
+            <Button type={"carrot"} onClick={pauseHandler}>
+              Resume
+            </Button>
+          )}
         </div>
 
-        <div className={cls.info}>
-          <p>
-            Start time:{" "}
-            {startTime && new Date(startTime).toLocaleString("ru-RU")}
-          </p>
-          <p>Total cases: {totalCases}</p>
-          <p>Total breaks time: {formatBreakTime(totalBreakMs)}</p>
-        </div>
+        {startTime && (
+          <div className={cls.info}>
+            <p>
+              Start time: {new Date(startTime).toLocaleString("ru-RU")}
+              <button className={cls.editBtn} onClick={openEditStart}>
+                ✏️
+              </button>
+            </p>
+            <p>Total cases: {totalCases}</p>
+            <p>
+              Total breaks time: {formatBreakTime(totalBreakMs)}
+              <button className={cls.editBtn} onClick={openEditBreak}>
+                ✏️
+              </button>
+            </p>
+          </div>
+        )}
+
+        {orderHistory.length > 0 && (
+          <div className={cls.history}>
+            <h4 className={cls.historyTitle}>Order history</h4>
+            <table className={cls.table}>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Cases</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderHistory.map((entry, i) => (
+                  <tr key={i}>
+                    <td>{new Date(entry.time).toLocaleTimeString("ru-RU")}</td>
+                    <td>+{entry.count}</td>
+                    <td className={cls.tableActions}>
+                      <button
+                        className={cls.editBtn}
+                        onClick={() => openEditHistory(i)}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className={cls.editBtn}
+                        onClick={() => deleteHistoryEntry(i)}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
+      {/* Popup: добавление кейсов */}
       {showPopup && (
         <div className={cls.overlay} onClick={() => setShowPopup(false)}>
           <div className={cls.popup} onClick={(e) => e.stopPropagation()}>
@@ -260,6 +390,81 @@ export function Homepage() {
                 Confirm
               </Button>
               <Button type={"red"} onClick={() => setShowPopup(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup: редактирование времени старта */}
+      {editStartOpen && (
+        <div className={cls.overlay} onClick={() => setEditStartOpen(false)}>
+          <div className={cls.popup} onClick={(e) => e.stopPropagation()}>
+            <h3 className={cls.popupTitle}>Edit start time</h3>
+            <input
+              className={cls.popupInput}
+              type="datetime-local"
+              value={editStartInput}
+              onChange={(e) => setEditStartInput(e.target.value)}
+              autoFocus
+            />
+            <div className={cls.popupButtons}>
+              <Button type={"blue"} onClick={confirmEditStart}>
+                Save
+              </Button>
+              <Button type={"red"} onClick={() => setEditStartOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup: редактирование времени паузы */}
+      {editBreakOpen && (
+        <div className={cls.overlay} onClick={() => setEditBreakOpen(false)}>
+          <div className={cls.popup} onClick={(e) => e.stopPropagation()}>
+            <h3 className={cls.popupTitle}>Edit break time (minutes)</h3>
+            <input
+              className={cls.popupInput}
+              type="number"
+              min="0"
+              value={editBreakInput}
+              onChange={(e) => setEditBreakInput(e.target.value)}
+              autoFocus
+            />
+            <div className={cls.popupButtons}>
+              <Button type={"blue"} onClick={confirmEditBreak}>
+                Save
+              </Button>
+              <Button type={"red"} onClick={() => setEditBreakOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup: редактирование записи в истории */}
+      {editHistoryIndex !== null && (
+        <div className={cls.overlay} onClick={() => setEditHistoryIndex(null)}>
+          <div className={cls.popup} onClick={(e) => e.stopPropagation()}>
+            <h3 className={cls.popupTitle}>Edit cases</h3>
+            <input
+              className={cls.popupInput}
+              type="number"
+              min="1"
+              value={editHistoryInput}
+              onChange={(e) => setEditHistoryInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmEditHistory()}
+              autoFocus
+            />
+            <div className={cls.popupButtons}>
+              <Button type={"blue"} onClick={confirmEditHistory}>
+                Save
+              </Button>
+              <Button type={"red"} onClick={() => setEditHistoryIndex(null)}>
                 Cancel
               </Button>
             </div>

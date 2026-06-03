@@ -103,3 +103,51 @@
 .finalInfo p {
   margin: 0;
 }
+
+.editBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 6px;
+  font-size: 14px;
+  opacity: 0.6;
+  padding: 0;
+}
+
+.editBtn:hover {
+  opacity: 1;
+}
+
+.history {
+  margin-top: 20px;
+}
+
+.historyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.table th {
+  font-weight: 600;
+  color: #888;
+}
+
+.tableActions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
